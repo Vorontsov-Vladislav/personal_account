@@ -22,8 +22,8 @@ CREATE TABLE cargos (
     id INT AUTO_INCREMENT PRIMARY KEY,
     container VARCHAR(50) NOT NULL,
     client_id INT NOT NULL,
-    manager_id INT NOT NULL,
-    arrival_date DATE NOT NULL,
+    manager_id INT NULL,
+    arrival_date DATE NULL,
     FOREIGN KEY (client_id) REFERENCES clients(id) ON DELETE CASCADE,
     FOREIGN KEY (manager_id) REFERENCES managers(id) ON DELETE CASCADE
 );
