@@ -12,3 +12,5 @@
 
     <button type="submit">Сохранить изменения</button>
 </form>
+
+<a href="/dashboard">Назад</a>

@@ -24,7 +24,7 @@ class AuthController {
 
             if ($user && password_verify($password, $user['password'])) {
                 $_SESSION['user_id'] = $user['id'];
-                $_SESSION['name'] = $user['name'];
+                $_SESSION['name'] = isset($user['name']) ? $user['name'] : $user['company_name'];
                 $_SESSION['role'] = $user['role'];
 
                 header("Location: /dashboard");

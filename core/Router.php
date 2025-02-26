@@ -1,7 +1,12 @@
 <?php
-    // var_dump($_SERVER['REQUEST_METHOD']);exit;
+
 class Router {
     private $routes = [];
+    private $pdo;
+
+    public function __construct($pdo) {
+        $this->pdo = $pdo;
+    }
 
     public function get($route, $callback) {
         $this->routes['GET'][$route] = $callback;
@@ -12,7 +17,6 @@ class Router {
     }
 
     public function handle($path) {
-        // Проверяем маршруты со статическими путями (switch)
         switch ($path) {
             case 'auth/login':
                 require __DIR__ . '/../app/controllers/AuthController.php';
@@ -28,9 +32,14 @@ class Router {
 
             case 'dashboard':
                 require __DIR__ . '/../app/controllers/DashboardController.php';
-                $dashboard = new DashboardController();
+                $dashboard = new DashboardController($this->pdo);
                 $dashboard->index();
                 return;
+        }
+
+        if ($path === 'favicon.ico') {
+            http_response_code(404);
+            exit;
         }
 
         $method = $_SERVER['REQUEST_URI'];

@@ -26,10 +26,16 @@ class CargoController {
     }
 
     public function edit($id) {
-        $cargoModel = new Cargo();
+        $cargoModel = new Cargo($this->pdo);
         $cargo = $cargoModel->getById($id);
         if (isset($_SESSION['role']) && $_SESSION['role'] === 'client') {
             echo 'У пользователя с данной ролью нет доступа к данному функционалу. <a href="/dashboard">Назад</a>';
+            die;
+        }
+
+        if (empty($cargo['manager_id'])) {
+            echo 'Редактирование разрешено только для контейнеров назначенных менеджерам.
+            <a href="/cargo/assign-new-cargo">Назначить контейнеры</a>';
             die;
         }
 
@@ -43,24 +49,24 @@ class CargoController {
 
     public function update() {
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-            die ('Недопустимый метод');
+            die('Недопустимый метод');
         }
 
-        $cargoModel = new Cargo();
+        $cargoModel = new Cargo($this->pdo);
         $id = $_POST['id'];
         $status = $_POST['status'];
         $arrival_date = !empty($_POST['arrival_date']) ? $_POST['arrival_date'] . ' 00:00:00' : NULL;
-        $cargo = $cargoModel->getById($id);
 
-        if (!$cargo) {
-            die ('Груз не найден'); 
+        if (!$cargoModel->getById($id)) {
+            die('Груз не найден');
         }
 
-        $stmt = $this->pdo->prepare("UPDATE cargos SET status = ?, arrival_date = ? WHERE id = ?");
-        $stmt->execute([$status, $arrival_date, $id]);
-
-        header("Location: /dashboard");
-        exit;
+        if ($cargoModel->updateCargo($id, $status, $arrival_date)) {
+            header("Location: /dashboard");
+            exit;
+        } else {
+            die('Ошибка обновления данных');
+        }
     }
 
     public function assignNewCargo() {
@@ -69,7 +75,7 @@ class CargoController {
             die;
         }
 
-        $cargoModel = new Cargo();
+        $cargoModel = new Cargo($this->pdo);
         $cargos = $cargoModel->getAllFreeCargos();
 
         require __DIR__ . '/../views/cargo/assign_new_cargo_form.php';
@@ -77,13 +83,16 @@ class CargoController {
 
     public function addCargo() {
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $cargoModel = new Cargo($this->pdo);
             $containerNumber = $_POST['container'];
             $clientId = $_SESSION['user_id'];
-            $stmt = $this->pdo->prepare("INSERT INTO cargos (container, client_id, status) VALUES (?, ?, 'Awaiting')");
-            $stmt->execute([$containerNumber, $clientId]);
-    
-            header("Location: /dashboard");
-            exit;
+
+            if ($cargoModel->add($containerNumber, $clientId)) {
+                header("Location: /dashboard");
+                exit;
+            } else {
+                die("Ошибка при добавлении груза.");
+            }
         }
     }
 
@@ -92,16 +101,18 @@ class CargoController {
             echo "Доступ запрещен!";
             exit;
         }
-    
+
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $cargoModel = new Cargo($this->pdo);
             $cargoId = $_POST['cargo_id'];
             $managerId = $_SESSION['user_id'];
-    
-            $stmt = $this->pdo->prepare("UPDATE cargos SET manager_id = ? WHERE id = ?");
-            $stmt->execute([$managerId, $cargoId]);
-    
-            header("Location: /cargo/assign-new-cargo");
-            exit;
+
+            if ($cargoModel->assignToManager($cargoId, $managerId)) {
+                header("Location: /cargo/assign-new-cargo");
+                exit;
+            } else {
+                die("Ошибка при назначении менеджера.");
+            }
         }
     }
 
@@ -132,37 +143,17 @@ class CargoController {
     private function generateExcelFile() {
         $filePath = __DIR__ . '/../../exports/cargos' . time() . '.xlsx';
         $spreadsheet = new Spreadsheet();
+        $cargoModel = new Cargo($this->pdo);
         $sheet = $spreadsheet->getActiveSheet();
+
         $userId = $_SESSION['user_id'];
         $userRole = $_SESSION['role'];
 
-        if ($userRole === 'client') {
-            $stmt = $this->pdo->prepare("
-                SELECT cargos.id, cargos.container, cargos.status, cargos.arrival_date,
-                       clients.company_name AS client_name,
-                       CONCAT(managers.first_name, ' ', managers.last_name) AS manager_name
-                FROM cargos
-                LEFT JOIN clients ON cargos.client_id = clients.id
-                LEFT JOIN managers ON cargos.manager_id = managers.id
-                WHERE cargos.client_id = ?
-            ");
-            $stmt->execute([$userId]);
-        } elseif ($userRole === 'manager') {
-            $stmt = $this->pdo->prepare("
-                SELECT cargos.id, cargos.container, cargos.status, cargos.arrival_date,
-                       clients.company_name AS client_name,
-                       CONCAT(managers.first_name, ' ', managers.last_name) AS manager_name
-                FROM cargos
-                JOIN clients ON cargos.client_id = clients.id
-                LEFT JOIN managers ON cargos.manager_id = managers.id
-                WHERE cargos.manager_id = ? OR cargos.manager_id IS NULL
-            ");
-            $stmt->execute([$userId]);
-        } else {
+        $cargos = $cargoModel->getCargosForExport($userId, $userRole);
+
+        if (empty($cargos)) {
             die("Недостаточно прав для экспорта данных.");
         }
-
-        $cargos = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
         $sheet->setCellValue('A1', 'ID');
         $sheet->setCellValue('B1', 'Контейнер');

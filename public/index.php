@@ -5,7 +5,7 @@ require __DIR__ . '/../config/db.php';
 require __DIR__ . '/../core/Router.php';
 require __DIR__ . '/../app/layouts/header.php';
 
-$router = new Router();
+$router = new Router($pdo);
 
 // Регистрируем маршруты здесь, до вызова handle()
 $router->get('client/details/{id}', function($id) use ($pdo) {
