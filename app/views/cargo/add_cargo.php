@@ -3,3 +3,5 @@
     <input type="text" name="container" required>
     <button type="submit">Добавить</button>
 </form>
+
+<a href="/dashboard">Назад</a>

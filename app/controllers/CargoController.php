@@ -18,7 +18,7 @@ class CargoController {
 
     public function new() {
         if (isset($_SESSION['role']) && $_SESSION['role'] === 'manager') {
-            echo 'У пользователя с данной ролью нет доступа к данному функционалу.';
+            echo 'У пользователя с данной ролью нет доступа к данному функционалу. <a href="/dashboard">Назад</a>';
             die;
         }
 
@@ -28,6 +28,11 @@ class CargoController {
     public function edit($id) {
         $cargoModel = new Cargo();
         $cargo = $cargoModel->getById($id);
+        if (isset($_SESSION['role']) && $_SESSION['role'] === 'client') {
+            echo 'У пользователя с данной ролью нет доступа к данному функционалу. <a href="/dashboard">Назад</a>';
+            die;
+        }
+
         if (!$cargo) {
             echo "Контейнер не найден.";
             return;
@@ -60,7 +65,7 @@ class CargoController {
 
     public function assignNewCargo() {
         if (isset($_SESSION['role']) && $_SESSION['role'] === 'client') {
-            echo 'У пользователя с данной ролью нет доступа к данному функционалу.';
+            echo 'У пользователя с данной ролью нет доступа к данному функционалу. <a href="/dashboard">Назад</a>';
             die;
         }
 

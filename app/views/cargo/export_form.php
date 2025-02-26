@@ -20,5 +20,7 @@
         <br><br>
         <button type="submit">Продолжить</button>
     </form>
+
+    <a href="/dashboard">Назад</a>
 </body>
 </html>

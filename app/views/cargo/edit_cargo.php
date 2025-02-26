@@ -1,5 +1,4 @@
 <form action="/cargo/update" method="POST">
-    <?php var_dump($cargo['arrival_date'])?>
     <input type="hidden" name="id" value="<?=$cargo['id']?>">
 
     <label for="status">Статус</label>

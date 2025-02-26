@@ -26,8 +26,6 @@
     <?php endforeach; ?>
 </table>
 
-
-
 <a href="/cargo/new" target="_blank">Завести груз</a>
 
 <?php 
@@ -35,6 +33,5 @@ if ($_SESSION['role'] === 'manager') {
     echo '<a href="/cargo/assign-new-cargo" target="_blank">Новые грузы</a>';
 }
 ?>
-
 
 <a href="/cargo/export">Выгрузить в Excel</a>
